@@ -14,7 +14,6 @@ phases:
 
   build:
     commands:
-      - echo "values ${BUILD_TRIGGER} / ${CODEBUILD_RESOLVED_SOURCE_VERSION} / ${CODEBUILD_SOURCE_VERSION}"
       - echo Build started on `date`
       - echo Building the docker image
       - docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest || true
