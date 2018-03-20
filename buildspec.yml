@@ -2,10 +2,10 @@ version: 0.2
 
 phases:
 
- install:
-  commands:
-    - echo "Full environment:"
-    - printenv
+  install:
+    commands:
+      - echo "Full environment:"
+      - printenv
 
   pre_build:
     commands:
