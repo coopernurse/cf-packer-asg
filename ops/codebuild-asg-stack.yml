@@ -34,6 +34,8 @@ Resources:
         EnvironmentVariables:
           - Name: ECR_REPOSITORY
             Value: !Ref EcrRepository
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref "AWS::AccountId"
       Source:
         Type: GITHUB
         Location: https://github.com/coopernurse/cf-packer-asg.git

@@ -10,18 +10,19 @@ phases:
   pre_build:
     commands:
       - echo "Logging into Amazon ECR"
-      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - $(aws ecr get-login --no-include-email --region $AWS_REGION)
 
   build:
     commands:
       - echo "values ${BUILD_TRIGGER} / ${CODEBUILD_RESOLVED_SOURCE_VERSION} / ${CODEBUILD_SOURCE_VERSION}"
       - echo Build started on `date`
       - echo Building the docker image
-      - docker pull $ECR_REPOSITORY/poc-cf-packer-asg || true
-      - docker build -t $ECR_REPOSITORY/poc-cf-packer-asg --cache-from $ECR_REPOSITORY/poc-cf-packer-asg .
+      - docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest || true
+      - docker build -t $ECR_REPOSITORY:latest --cache-from $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest .
+      - docker tag $ECR_REPOSITORY:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
 
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the docker image
-      - docker push $ECR_REPOSITORY/poc-cf-packer-asg
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
