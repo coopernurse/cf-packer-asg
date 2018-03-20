@@ -74,5 +74,11 @@ Resources:
                 - 'ecr:InitiateLayerUpload'
                 - 'ecr:PutImage'
                 - 'ecr:UploadLayerPart'
+                - 'ecr:GetDownloadUrlForLayer'
+                - 'ecr:GetRepositoryPolicy'
+                - 'ecr:DescribeRepositories'
+                - 'ecr:ListImages'
+                - 'ecr:DescribeImages'
+                - 'ecr:BatchGetImage'
                 Effect: Allow
                 Resource: '*'
