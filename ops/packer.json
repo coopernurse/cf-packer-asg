@@ -3,7 +3,7 @@
     "aws_region": "{{env `AWS_REGION`}}",
     "aws_account_id": "{{env `AWS_ACCOUNT_ID`}}",
     "ecr_repository": "{{env `ECR_REPOSITORY`}}",
-    "aws_ami_name": "poc-cf-packer-{{isotime \"2006-01-02\"}}"
+    "aws_ami_name": "poc-cf-packer-{{isotime \"2006-01-02-1504\"}}"
   },
 
   "builders": [{
