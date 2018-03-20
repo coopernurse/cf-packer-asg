@@ -13,7 +13,6 @@
     "ssh_username": "ec2-user",
     "ami_name": "{{user `aws_ami_name`}}",
     "ami_description": "My Python App - Based on Amazon Linux 2",
-    "iam_instance_profile": "CodeBuildPackerInstanceProfile",
     "associate_public_ip_address": "true",
     "source_ami_filter": {
       "filters": {
