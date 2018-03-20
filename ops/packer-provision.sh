@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -x
 
 # install updates
 sudo yum update -y
@@ -12,7 +13,7 @@ sudo systemctl start docker
 
 # pull image
 image_name="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest"
-aws ecr get-login --no-include-email --region $AWS_REGION > /tmp/install_docker.sh
+aws --debug ecr get-login --no-include-email --region $AWS_REGION > /tmp/install_docker.sh
 echo "docker pull $image_name" >> /tmp/install_docker.sh
 sudo bash /tmp/install_docker.sh
 rm -f /tmp/install_docker.sh
