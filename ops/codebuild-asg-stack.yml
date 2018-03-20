@@ -119,6 +119,7 @@ Resources:
                 - 'ecr:ListImages'
                 - 'ecr:DescribeImages'
                 - 'ecr:BatchGetImage'
+                # required to allow packer to use iam_instance_profile
                 - 'iam:PassRole'
                 Effect: Allow
                 Resource: '*'
