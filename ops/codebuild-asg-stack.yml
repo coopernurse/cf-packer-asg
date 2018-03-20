@@ -42,6 +42,12 @@ Resources:
       Triggers:
         Webhook: true
       TimeoutInMinutes: 15
+  CodeBuildPackerInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref CodeBuildRole
+      InstanceProfileName: CodeBuildPackerInstanceProfile
   CodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
