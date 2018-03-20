@@ -42,5 +42,5 @@ phases:
       #
       # run packer to create AMI
       #
-      - ./packer build ops/packer.json
+      - ./packer build -debug ops/packer.json
       - echo Build completed on `date`
