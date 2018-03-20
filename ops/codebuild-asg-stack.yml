@@ -119,5 +119,6 @@ Resources:
                 - 'ecr:ListImages'
                 - 'ecr:DescribeImages'
                 - 'ecr:BatchGetImage'
+                - 'iam:PassRole'
                 Effect: Allow
                 Resource: '*'
