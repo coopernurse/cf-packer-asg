@@ -1,0 +1,76 @@
+#
+#  cf-packer-asg CloudFormation template
+#
+#  resources:
+#     * CodeBuild Project
+#     * ECR
+#     * ELB (Classic)
+#     * AutoScaleGroup
+#
+#
+
+Description: PoC of using CodeBuild with packer to create AMIs that are deployed to an ASG
+
+Outputs:
+  EcrArn:
+    Value: !GetAtt EcrRepository.Arn
+
+Resources:
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: poc-cf-packer-asg
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      ServiceRole: !Ref CodeBuildRole
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: ECR_REPOSITORY
+            Value: !Ref EcrRepository
+      Source:
+        Type: GITHUB
+        Location: https://github.com/coopernurse/cf-packer-asg.git
+      Triggers:
+        Webhook: true
+      TimeoutInMinutes: 15
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [codebuild.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                - 'logs:*'
+                - 'ec2:CreateNetworkInterface'
+                - 'ec2:DescribeNetworkInterfaces'
+                - 'ec2:DeleteNetworkInterface'
+                - 'ec2:DescribeSubnets'
+                - 'ec2:DescribeSecurityGroups'
+                - 'ec2:DescribeDhcpOptions'
+                - 'ec2:DescribeVpcs'
+                - 'ec2:CreateNetworkInterfacePermission'
+                - 'ecr:BatchCheckLayerAvailability'
+                - 'ecr:CompleteLayerUpload'
+                - 'ecr:GetAuthorizationToken'
+                - 'ecr:InitiateLayerUpload'
+                - 'ecr:PutImage'
+                - 'ecr:UploadLayerPart'
+                Effect: Allow
+                Resource: '*'
