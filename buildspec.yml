@@ -19,9 +19,16 @@ phases:
       - docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest || true
       - docker build -t $ECR_REPOSITORY:latest --cache-from $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest .
       - docker tag $ECR_REPOSITORY:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
-
-  post_build:
-    commands:
-      - echo Build completed on `date`
-      - echo Pushing the docker image
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+      - echo Creating AMI
+      - curl -qL -o packer.zip https://releases.hashicorp.com/packer/1.2.1/packer_1.2.1_linux_amd64.zip
+      - unzip packer.zip
+      - curl -qL -o jq https://stedolan.github.io/jq/download/linux64/jq
+      - chmod +x ./jq
+      - curl -qL -o aws_credentials.json http://169.254.170.2/$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI > aws_credentials.json
+      - aws configure set region $AWS_REGION
+      - aws configure set aws_access_key_id `./jq -r '.AccessKeyId' aws_credentials.json`
+      - aws configure set aws_secret_access_key `./jq -r '.SecretAccessKey' aws_credentials.json`
+      - aws configure set aws_session_token `./jq -r '.Token' aws_credentials.json`
+      - packer build ops/packer.json
+      - echo Build completed on `date`

@@ -1,0 +1,39 @@
+{
+  "variables": {
+    "aws_region": "{{env `AWS_REGION`}}",
+    "aws_account_id": "{{env `AWS_ACCOUNT_ID`}}",
+    "ecr_repository": "{{env `ECR_REPOSITORY`}}",
+    "aws_ami_name": "poc_cf_packer_{{isotime \"2006-01-02\"}}"
+  },
+
+  "builders": [{
+    "type": "amazon-ebs",
+    "region": "{{user `aws_region`}}",
+    "instance_type": "t2.small",
+    "ssh_username": "ec2-user",
+    "ami_name": "{{user `aws_ami_name`}}",
+    "ami_description": "My Python App - Based on Amazon Linux 2",
+    "associate_public_ip_address": "true",
+    "source_ami_filter": {
+      "filters": {
+        "virtualization-type": "hvm",
+        "name": "amzn2-ami*-ebs",
+        "root-device-type": "ebs"
+      },
+      "owners": ["137112412989", "591542846629", "801119661308", "102837901569", "013907871322", "206029621532", "286198878708", "443319210888"],
+      "most_recent": true
+    }
+  }],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "script": "ops/packer-provision.sh",
+      "environment_vars": [
+        "AWS_ACCOUNT_ID={{user `aws_account_id`}}",
+        "AWS_REGION={{user `aws_region`}}",
+        "ECR_REPOSITORY={{user `ecr_repository`}}"
+      ]
+    }
+  ]
+}
