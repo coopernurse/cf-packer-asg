@@ -1,5 +1,23 @@
 # Proof of Concept - CF / Packer / ASG
 
+## Usage
+
+    $ cp env-sample .env
+    
+    # edit .env as desired
+    
+    $ source .env
+    $ ./ops/create-update-stack.sh
+    
+The stack will output an ELB DNSName, which you can then use with `rolling-update-test.py`
+
+For example:
+
+    # edit .env and bump AppVersion
+    $ source .env
+    $ ./ops/create-update-stack.sh
+    $ ./test/rolling-update-test.py http://poc-cf-packer-webapp-elb-1409725999.us-west-2.elb.amazonaws.com/
+
 ## Troubleshooting
 
 ### Error creating stack
