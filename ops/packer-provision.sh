@@ -7,7 +7,7 @@ set -x
 sudo yum update -y
 
 # install docker
-sudo yum install docker -y
+sudo yum install aws-cfn-bootstrap docker -y
 sudo systemctl enable docker
 sudo systemctl start docker
 
