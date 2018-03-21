@@ -4,22 +4,170 @@
 #  resources:
 #     * CodeBuild Project
 #     * ECR
-#     * ELB (Classic)
+#     * ELB (ALB)
 #     * AutoScaleGroup
 #
 #
 
 Description: PoC of using CodeBuild with packer to create AMIs that are deployed to an ASG
 
+Parameters:
+  Subnets:
+    Description: Subnets the ALB and EC2 instances should be deployed to
+    Type: List<AWS::EC2::Subnet::Id>
+  VPC:
+    Description: VPC ID to deploy to
+    Type: AWS::EC2::VPC::Id
+  ClusterSize:
+    Description: Target number of WebApp instances
+    Type: Number
+    Default: 1
+  MaxClusterSize:
+      Description: Max number of WebApp instances - allows us to overprovision during rolling deploys
+      Type: Number
+      Default: 2
+  InstanceType:
+    Description: Instance type for WebApp instances
+    Type: String
+    Default: t2.micro
+  AMI:
+    Description: AMI ID for WebApp instances
+    Type: String
+  SSHKeyName:
+    Description: SSH key name to associate with WebApp instances
+    Type: String
+  AppVersion:
+    Description: Version string to set as APP_VERSION env var that webapp returns from /
+    Type: String
+    Default: 1
+
 Outputs:
   EcrArn:
     Value: !GetAtt EcrRepository.Arn
+  WebAppDNSName:
+    Value: !GetAtt WebAppLoadBalancer.DNSName
 
 Resources:
+  #
+  # ELB
+  #
+  WebAppLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: poc-cf-packer-webapp-elb
+      SecurityGroups:
+        - !Ref WebAppLoadBalancerSecurityGroup
+      Subnets: !Ref Subnets
+      Type: application
+  WebAppLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref WebAppLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref WebAppTargetGroup
+  WebAppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: poc-cf-packer-webapp-targetgroup
+      VpcId: !Ref VPC
+      Port: 80
+      Protocol: HTTP
+      HealthCheckIntervalSeconds: 5
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+      HealthCheckPort: 80
+      HealthCheckTimeoutSeconds: 3
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+
+  #
+  # AutoScaleGroup
+  #
+  WebAppASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      TargetGroupARNs:
+        - !Ref WebAppTargetGroup
+      AvailabilityZones:
+        Fn::GetAZs: ''
+      LaunchConfigurationName:
+        Ref: WebAppASGLaunchConfig
+      DesiredCapacity: !Ref ClusterSize
+      MaxSize: !Ref MaxClusterSize
+      MinSize: !Ref ClusterSize
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT10M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: '1'
+        MaxBatchSize: '4'
+        WaitOnResourceSignals: true
+        PauseTime: PT10M
+        # TODO: review this list
+        SuspendProcesses:
+          - ReplaceUnhealthy
+          - AZRebalance
+          - AlarmNotification
+          - ScheduledActions
+
+  WebAppASGLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      KeyName: !Ref SSHKeyName
+      ImageId: !Ref AMI
+      SecurityGroups:
+        - Ref: WebAppSecurityGroup
+      InstanceType: !Ref InstanceType
+      UserData:
+        "Fn::Base64": !Sub |
+          #!/bin/bash -xe
+          echo "APP_VERSION=${AppVersion}" > /etc/webapp.env
+          /opt/aws/bin/cfn-signal -e $? -r "Setup complete" --region ${AWS::Region} --stack ${AWS::StackName} --resource WebAppASG
+
+  #
+  # Security Groups
+  #
+  WebAppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for WebApp EC2 Instances
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  WebAppLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for ALB
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+  #
+  # ECR Repo
+  #
   EcrRepository:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: poc-cf-packer-asg
+
+  #
+  # CodeBuild
+  #
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -42,6 +190,10 @@ Resources:
       Triggers:
         Webhook: true
       TimeoutInMinutes: 15
+
+  #
+  # IAM
+  #
   CodeBuildPackerInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
