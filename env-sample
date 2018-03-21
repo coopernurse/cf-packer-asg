@@ -1,0 +1,7 @@
+export Subnets=subnet-fca14190,subnet-f8a14192,subnet-fca14191	
+export VPC=vpc-e4a1428d
+export ClusterSize=4
+export InstanceType=t2.micro
+export AMI=ami-c7bf23bf
+export SSHKeyName=my-ssh-key
+export AppVersion=1
