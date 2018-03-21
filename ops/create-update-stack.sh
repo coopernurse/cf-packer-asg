@@ -26,7 +26,7 @@ done
 
 # check if stack already exists
 action="create-stack"
-aws cloudformation describe-stacks --stack-name ${stack_name} > /dev/null
+aws cloudformation describe-stacks --stack-name ${stack_name} > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     action="update-stack"
 fi
